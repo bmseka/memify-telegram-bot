@@ -11,6 +11,23 @@ from tqdm import trange
 
 bot = telebot.TeleBot('YOUR_TOKEN')
 
+logger = logging.getLogger('memify')
+logger.setLevel(logging.INFO)
+
+sh = logging.StreamHandler()
+sh.setLevel(logging.INFO)
+
+fh = logging.FileHandler('memifylog.txt')
+fh.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(message)s')
+
+sh.setFormatter(formatter)
+fh.setFormatter(formatter)
+
+logger.addHandler(sh)
+logger.addHandler(fh)
+
 def get_html(url):
     response = requests.get(url)
     return response.text
@@ -33,10 +50,9 @@ def get_images(html):
 def send_images(images, descriptions):
     for i in range(len(images)):
         bot.send_photo('@YOUR_CHANNEL', images[i], descriptions[i])
-        logging.info(f'Sent image {i+1} of {len(new_images)} to @YOUR_CHANNEL')
+        logger.info(f'Sent image {i+1} of {len(new_images)} to @YOUR_CHANNEL')
         save_last_images([images[i]])
         for i in trange(60, 0, -1):
-        # делаем паузу в 1 секунду
             time.sleep(1)
 
 def save_last_images(images):
@@ -66,22 +82,19 @@ def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')
     sys.exit(0)
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
-
 signal.signal(signal.SIGINT, signal_handler)
 
 url = 'https://memify.ru/'
 
 while True:
     html = get_html(url)
-    logging.info(f'Got HTML from {url}')
+    logger.info(f'Got HTML from {url}')
     images, descriptions = get_images(html)
-    logging.info(f'Found {len(images)} images on the site')
+    logger.info(f'Found {len(images)} images on the site')
     new_images, new_descriptions = check_new_images(images)
-    logging.info(f'Found {len(new_images)} new images to send')
+    logger.info(f'Found {len(new_images)} new images to send')
     if new_images:
         send_images(new_images, new_descriptions)
-        logging.info(f'Sent {len(new_images)} images to @YOUR_CHANNEL)
+        logger.info(f'Sent {len(new_images)} images to @YOUR_CHANNEL)
     for i in trange(300, 0, -1):
-        # делаем паузу в 1 секунду
         time.sleep(1)
